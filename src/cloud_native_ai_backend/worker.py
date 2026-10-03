@@ -1,9 +1,11 @@
 import logging
+import time
 from typing import Protocol
 
 from sqlalchemy.orm import Session
 
 from .audit import AuditWriter
+from .config import get_settings
 from .database import SessionLocal
 from .domain import Job
 from .metrics import metrics
@@ -74,11 +76,19 @@ class Worker:
         self.repository.session.commit()
         return True
 
+    def run_forever(self, poll_interval_seconds: float) -> None:
+        if poll_interval_seconds <= 0:
+            raise ValueError("poll_interval_seconds must be positive")
+        while True:
+            if not self.run_once():
+                time.sleep(poll_interval_seconds)
+
 
 def main() -> None:
     logging.basicConfig(level=logging.INFO)
+    settings = get_settings()
     with SessionLocal() as session:
-        Worker(session, "development-worker").run_once()
+        Worker(session, settings.worker_id).run_forever(settings.worker_poll_interval_seconds)
 
 
 if __name__ == "__main__":

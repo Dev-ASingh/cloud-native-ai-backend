@@ -20,6 +20,7 @@ bounded retry transition.
 - HTTP requests never execute job work inline.
 - Provider adapters can be added behind `JobExecutor` without changing claim
   or state-transition logic.
-- The current module supports one-shot execution evidence; a long-running
-  supervisor, broker transport, graceful shutdown, and metrics remain future
-  work.
+-   The worker module now supports a long-running polling process with a
+  configurable identity and interval. Compose runs the API and worker as
+  separate containers against the same PostgreSQL service. A broker transport,
+  graceful shutdown, and exported metrics remain future work.

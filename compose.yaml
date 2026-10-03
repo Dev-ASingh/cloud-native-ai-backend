@@ -15,5 +15,27 @@ services:
       timeout: 5s
       retries: 10
 
+  api:
+    build:
+      context: .
+    environment:
+      DATABASE_URL: postgresql+psycopg://backend:backend@postgres:5432/backend
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  worker:
+    build:
+      context: .
+    command: ["python", "-m", "cloud_native_ai_backend.worker"]
+    environment:
+      DATABASE_URL: postgresql+psycopg://backend:backend@postgres:5432/backend
+      WORKER_ID: compose-worker
+    depends_on:
+      postgres:
+        condition: service_healthy
+
 volumes:
   backend-postgres-data:
