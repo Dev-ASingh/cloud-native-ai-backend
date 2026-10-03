@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from .audit import AuditWriter
 from .database import SessionLocal
 from .domain import Job
+from .metrics import metrics
 from .sql_repository import SqlAlchemyJobRepository
 
 logger = logging.getLogger(__name__)
@@ -36,13 +37,21 @@ class Worker:
     def run_once(self) -> bool:
         job = self.repository.claim_next(self.worker_id)
         if job is None:
+            metrics.increment("worker.empty_polls")
             return False
+        metrics.increment("worker.jobs_claimed")
+        metrics.increment("worker.attempts")
 
         try:
             self.executor(job)
         except Exception:
             logger.exception("Job execution failed", extra={"job_id": str(job.id)})
             failed = self.repository.fail(job.id, self.worker_id)
+            metrics.increment("worker.jobs_failed")
+            if failed.status.value == "queued":
+                metrics.increment("worker.jobs_retried")
+            else:
+                metrics.increment("worker.jobs_terminally_failed")
             self.audit.append(
                 organization_id=job.organization_id,
                 actor_id=self.worker_id,
@@ -53,6 +62,7 @@ class Worker:
             )
         else:
             completed = self.repository.complete(job.id, self.worker_id)
+            metrics.increment("worker.jobs_completed")
             self.audit.append(
                 organization_id=job.organization_id,
                 actor_id=self.worker_id,

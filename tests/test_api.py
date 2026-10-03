@@ -8,6 +8,7 @@ from cloud_native_ai_backend.auth import create_session, hash_session_token
 from cloud_native_ai_backend.database import SessionLocal
 from cloud_native_ai_backend.domain import Principal
 from cloud_native_ai_backend.main import app
+from cloud_native_ai_backend.metrics import metrics
 from cloud_native_ai_backend.models import (
     AuditEventRecord,
     IdempotencyRecord,
@@ -27,6 +28,7 @@ AUTH = {"Authorization": f"Bearer {TOKEN_1}"}
 
 
 def setup_function() -> None:
+    metrics.reset()
     with SessionLocal() as session:
         session.execute(delete(IdempotencyRecord))
         session.execute(delete(AuditEventRecord))
@@ -74,6 +76,35 @@ def test_jobs_require_authentication() -> None:
     response = client.get("/api/v1/jobs")
 
     assert response.status_code == 401
+
+
+def test_metrics_require_authentication() -> None:
+    response = client.get("/api/v1/metrics")
+
+    assert response.status_code == 401
+
+
+def test_metrics_report_queue_and_worker_activity() -> None:
+    headers = {**AUTH, "Idempotency-Key": "metrics-request"}
+    created = client.post("/api/v1/jobs", headers=headers, json={"payload": {}})
+    assert created.status_code == 202
+
+    with SessionLocal() as session:
+        assert Worker(session, "metrics-worker").run_once() is True
+        SqlAlchemyJobRepository(session).create(
+            Principal(user_id="user-2", organization_id="org-2", role="member"),
+            {"kind": "other-org"},
+            "other-org-metrics-request",
+        )
+
+    response = client.get("/api/v1/metrics", headers=AUTH)
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["jobs.completed"] == 1
+    assert body["jobs.queued"] == 0
+    assert body["worker.jobs_claimed"] == 1
+    assert body["worker.jobs_completed"] == 1
 
 
 def test_unknown_session_is_rejected() -> None:

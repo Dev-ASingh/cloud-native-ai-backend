@@ -16,7 +16,9 @@ dependency failures.
 Milestone 3 currently exercises the repository, one-shot worker, and audit
 writer through a local SQLite database and separately verifies a fresh Alembic
 upgrade.
-PostgreSQL integration tests are required before deployment.
+PostgreSQL integration tests are required before deployment. The metrics
+contract also verifies authentication and organization scoping so one
+organization cannot observe another organization's queue depth.
 
 ### Contract tests
 

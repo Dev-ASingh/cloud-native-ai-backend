@@ -43,6 +43,8 @@
 - Fail closed when authorization or required dependency state is unknown.
 - Audit records are append-only and contain identifiers and bounded transition
   metadata, never credentials, tokens, or full job payloads.
+- Operational metrics require authentication and scope database-backed job
+  gauges to the caller's organization.
 
 ## Verification
 

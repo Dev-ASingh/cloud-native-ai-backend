@@ -107,3 +107,6 @@ the repository can be considered deployable.
 Worker completion and failure append organization-scoped audit events containing
 the actor, action, target, outcome, and attempt number; job payloads are not
 copied into audit metadata.
+An authenticated operational metrics endpoint reports organization-scoped job
+gauges plus process-local worker counters. Centralized metrics and tracing are
+required before production deployment.

@@ -3,14 +3,15 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, status
 from pydantic import BaseModel, ConfigDict, Field
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from .auth import hash_session_token, revoke_session
 from .config import Settings, get_settings
 from .database import get_session
 from .domain import DomainError, Job, Principal
-from .models import MembershipRecord, SessionRecord
+from .metrics import metrics
+from .models import JobRecord, MembershipRecord, SessionRecord
 from .sql_repository import SqlAlchemyJobRepository
 
 router = APIRouter(prefix="/api/v1")
@@ -139,6 +140,31 @@ def ready(settings: Settings = Depends(get_settings)) -> dict[str, str]:
     if not settings.readiness_dependency:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Not ready.")
     return {"status": "ready"}
+
+
+@router.get("/metrics")
+def operational_metrics(
+    session: Session = Depends(get_session),
+    principal: Principal = Depends(get_principal),
+) -> dict[str, int]:
+    counts = {
+        "jobs.queued": 0,
+        "jobs.running": 0,
+        "jobs.completed": 0,
+        "jobs.failed": 0,
+        "jobs.cancelled": 0,
+    }
+    rows = session.execute(
+        select(JobRecord.status, func.count())
+        .where(JobRecord.organization_id == principal.organization_id)
+        .group_by(JobRecord.status)
+    )
+    for status_name, count in rows:
+        key = f"jobs.{status_name}"
+        if key in counts:
+            counts[key] = count
+    counts.update(metrics.snapshot())
+    return counts
 
 
 @router.get("/me", response_model=PrincipalResponse)
