@@ -3,6 +3,7 @@ from typing import Protocol
 
 from sqlalchemy.orm import Session
 
+from .audit import AuditWriter
 from .database import SessionLocal
 from .domain import Job
 from .sql_repository import SqlAlchemyJobRepository
@@ -28,6 +29,7 @@ class Worker:
         executor: JobExecutor = execute_deterministic_job,
     ) -> None:
         self.repository = SqlAlchemyJobRepository(session)
+        self.audit = AuditWriter(session)
         self.worker_id = worker_id
         self.executor = executor
 
@@ -40,9 +42,26 @@ class Worker:
             self.executor(job)
         except Exception:
             logger.exception("Job execution failed", extra={"job_id": str(job.id)})
-            self.repository.fail(job.id, self.worker_id)
+            failed = self.repository.fail(job.id, self.worker_id)
+            self.audit.append(
+                organization_id=job.organization_id,
+                actor_id=self.worker_id,
+                action="job.execution",
+                target_id=job.id,
+                outcome=failed.status.value,
+                metadata={"attempt": failed.attempt},
+            )
         else:
-            self.repository.complete(job.id, self.worker_id)
+            completed = self.repository.complete(job.id, self.worker_id)
+            self.audit.append(
+                organization_id=job.organization_id,
+                actor_id=self.worker_id,
+                action="job.execution",
+                target_id=job.id,
+                outcome=completed.status.value,
+                metadata={"attempt": completed.attempt},
+            )
+        self.repository.session.commit()
         return True
 
 

@@ -104,3 +104,6 @@ transitions. Worker leases, expiry recovery, bounded retry attempts, and a
 one-shot deterministic worker process are implemented. A production queue
 adapter, provider execution, and identity provider are still required before
 the repository can be considered deployable.
+Worker completion and failure append organization-scoped audit events containing
+the actor, action, target, outcome, and attempt number; job payloads are not
+copied into audit metadata.

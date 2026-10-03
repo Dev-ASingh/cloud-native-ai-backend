@@ -13,8 +13,9 @@ Run against disposable PostgreSQL and Redis services. Cover migrations,
 transactions, queue-worker execution, artifact persistence, approval flow, and
 dependency failures.
 
-Milestone 3 currently exercises the repository and one-shot worker through a
-local SQLite database and separately verifies a fresh Alembic upgrade.
+Milestone 3 currently exercises the repository, one-shot worker, and audit
+writer through a local SQLite database and separately verifies a fresh Alembic
+upgrade.
 PostgreSQL integration tests are required before deployment.
 
 ### Contract tests

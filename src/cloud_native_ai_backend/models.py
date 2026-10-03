@@ -67,3 +67,20 @@ class IdempotencyRecord(Base):
     organization_id: Mapped[str] = mapped_column(String(128), index=True)
     key: Mapped[str] = mapped_column(String(128))
     job_id: Mapped[UUID] = mapped_column()
+
+
+class AuditEventRecord(Base):
+    __tablename__ = "audit_events"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    organization_id: Mapped[str] = mapped_column(String(128), index=True)
+    actor_id: Mapped[str] = mapped_column(String(128))
+    action: Mapped[str] = mapped_column(String(128), index=True)
+    target_id: Mapped[str] = mapped_column(String(128), index=True)
+    outcome: Mapped[str] = mapped_column(String(32))
+    event_metadata: Mapped[dict[str, object]] = mapped_column(
+        "metadata", JSON, default=dict
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC)
+    )

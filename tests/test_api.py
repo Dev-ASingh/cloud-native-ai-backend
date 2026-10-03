@@ -3,11 +3,13 @@ from datetime import UTC, datetime, timedelta
 from fastapi.testclient import TestClient
 from sqlalchemy import delete
 
+from cloud_native_ai_backend.audit import AuditWriter
 from cloud_native_ai_backend.auth import create_session, hash_session_token
 from cloud_native_ai_backend.database import SessionLocal
 from cloud_native_ai_backend.domain import Principal
 from cloud_native_ai_backend.main import app
 from cloud_native_ai_backend.models import (
+    AuditEventRecord,
     IdempotencyRecord,
     JobRecord,
     MembershipRecord,
@@ -27,6 +29,7 @@ AUTH = {"Authorization": f"Bearer {TOKEN_1}"}
 def setup_function() -> None:
     with SessionLocal() as session:
         session.execute(delete(IdempotencyRecord))
+        session.execute(delete(AuditEventRecord))
         session.execute(delete(JobRecord))
         session.execute(delete(MembershipRecord))
         session.execute(delete(SessionRecord))
@@ -236,6 +239,10 @@ def test_worker_runs_executor_and_completes_job() -> None:
         assert worker.run_once() is True
         assert executed == [str(created.id)]
         assert repository.get_for("org-1", created.id).status.value == "completed"
+        event = session.query(AuditEventRecord).one()
+        assert event.action == "job.execution"
+        assert event.outcome == "completed"
+        assert event.event_metadata == {"attempt": 1}
         assert worker.run_once() is False
 
 
@@ -251,3 +258,21 @@ def test_worker_records_executor_failure_for_retry() -> None:
 
         assert worker.run_once() is True
         assert repository.get_for("org-1", created.id).status.value == "queued"
+        event = session.query(AuditEventRecord).one()
+        assert event.outcome == "queued"
+        assert "should_fail" not in event.event_metadata
+
+
+def test_audit_writer_does_not_store_payloads() -> None:
+    with SessionLocal() as session:
+        AuditWriter(session).append(
+            organization_id="org-1",
+            actor_id="worker-1",
+            action="job.execution",
+            target_id="job-1",
+            outcome="completed",
+            metadata={"attempt": 1},
+        )
+        session.commit()
+        event = session.query(AuditEventRecord).one()
+        assert event.event_metadata == {"attempt": 1}

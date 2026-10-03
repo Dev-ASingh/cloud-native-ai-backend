@@ -41,6 +41,8 @@
 - Never log credentials, tokens, or full sensitive payloads.
 - Never place secrets in the browser bundle or repository.
 - Fail closed when authorization or required dependency state is unknown.
+- Audit records are append-only and contain identifiers and bounded transition
+  metadata, never credentials, tokens, or full job payloads.
 
 ## Verification
 
