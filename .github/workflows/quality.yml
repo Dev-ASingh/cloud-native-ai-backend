@@ -59,3 +59,16 @@ jobs:
           ignore-unfixed: true
           vuln-type: os,library
           severity: CRITICAL,HIGH
+      - name: Smoke test container
+        run: |
+          set -euo pipefail
+          container_id="$(docker run --detach --publish 8000:8000 cloud-native-ai-backend:${{ github.sha }})"
+          trap 'docker rm --force "$container_id"' EXIT
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:8000/api/v1/health; then
+              exit 0
+            fi
+            sleep 1
+          done
+          docker logs "$container_id"
+          exit 1

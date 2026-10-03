@@ -21,3 +21,5 @@ an explicit release operation.
 - CI can scan the exact artifact used for deployment.
 - The container has a smaller attack surface than the development environment.
 - Deployment automation must run migrations with an explicit, controlled step.
+- Orchestrators can use the image health check to distinguish a started
+  process from a responsive API.
