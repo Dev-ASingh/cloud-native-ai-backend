@@ -1,129 +1,150 @@
 # Cloud-Native AI Backend
 
-Secure, observable, asynchronous backend foundations for trustworthy AI
-workloads.
+Secure asynchronous backend foundations for trustworthy AI workloads.
 
 ![System architecture overview](assets/README-architecture.svg)
 
-Version one deliberately uses deterministic work so that the backend, security,
-reliability, delivery, and operations can be evaluated before adding model
-variability.
-
 ## Status
 
-The current implementation includes a database-backed queue boundary, worker
-leases, audit events, scoped metrics, and structured telemetry. It uses
-development-only request headers and a local SQLite default; PostgreSQL is
-supported through `DATABASE_URL`. No production or customer data is used.
+This repository is an active engineering foundation. It is not presented as a
+finished hosted product or as evidence of production customer usage.
 
-Database schema changes are managed with Alembic:
+The implemented boundary includes:
 
-```bash
-alembic upgrade head
+- FastAPI API routes with stable response and error models.
+- Organization-scoped authorization backed by persisted memberships.
+- Opaque bearer sessions with expiration and authenticated revocation.
+- Idempotent, database-backed jobs with queued, running, completed, cancelled,
+  and failed transitions.
+- Worker leases, expiry recovery, bounded retries, and terminal failures.
+- Append-only organization-scoped audit events.
+- Request-ID-correlated JSON logs and organization-scoped operational metrics.
+- SQLite for local development and PostgreSQL for integration or deployment.
+- Separate API and worker container paths in Docker Compose.
+- Non-root container execution and CI security gates.
+
+The deterministic executor is intentional. Provider adapters, approval-gated
+delivery, artifact storage, and hosted deployment remain explicit next
+milestones rather than implied capabilities.
+
+## Architecture
+
+```text
+client
+  |
+  v
+API service ---- PostgreSQL
+  |
+  v
+durable job state
+  |
+  v
+worker process
+  |
+  +-- deterministic executor
+  +-- audit events
+  +-- metrics and structured logs
 ```
 
-## Design goals
+The domain and persistence boundaries are designed so that a real broker,
+provider adapter, artifact store, and centralized telemetry backend can be
+introduced without moving vendor-specific code into the domain layer.
 
-- Versioned API with explicit schemas and stable errors.
-- Organization-scoped authorization and deny-by-default access.
-- Idempotent asynchronous jobs with bounded retries.
-- Human approval before sensitive delivery.
-- Append-only audit events without secret leakage.
-- Reproducible local and cloud deployment.
-- Measurable quality, reliability, latency, and cost.
+Detailed responsibilities and invariants are documented in
+`docs/architecture.md`. Security boundaries are documented in
+`docs/threat-model.md`.
 
-## Planned stack
+## Technology
 
 - Python 3.12+
 - FastAPI and Pydantic
 - SQLAlchemy 2 and Alembic
-- PostgreSQL
-- Redis-backed queue adapter
-- Pytest
-- Docker Compose
-- Terraform
-- GitHub Actions
-- OpenTelemetry-compatible instrumentation
-
-The final queue and cloud provider choices remain subject to the documented
-architecture decision records. Application code will depend on interfaces
-rather than vendor-specific calls.
-
-## Repository map
-
-- `docs/architecture.md` — system boundary and component responsibilities.
-- `docs/threat-model.md` — assets, trust boundaries, abuse cases, and controls.
-- `docs/api-contract.md` — initial endpoint and error contract.
-- `docs/test-strategy.md` — unit, integration, contract, failure, and security
-  test gates.
-- `docs/adr/` — decision records.
-- `src/` — application code after the design contract is accepted.
-- `tests/` — executable evidence for every supported behavior.
+- SQLite for local development
+- PostgreSQL through `psycopg`
+- Docker and Docker Compose
+- Pytest, Ruff, and mypy
+- GitHub Actions, pip-audit, credential scanning, and Trivy
 
 ## Local development
 
-Install development dependencies and run the API against SQLite:
+Install the project and development tools:
 
 ```bash
 python -m pip install -e ".[dev]"
+```
+
+Run the API with the default SQLite database:
+
+```bash
 uvicorn cloud_native_ai_backend.main:app --reload
 ```
 
-For PostgreSQL-backed development, start the database and set the URL:
+Run the full local PostgreSQL topology:
 
 ```bash
-docker compose up -d postgres
-export DATABASE_URL=postgresql+psycopg://backend:backend@localhost:5432/backend
-alembic upgrade head
-uvicorn cloud_native_ai_backend.main:app --reload
+docker compose up --build
 ```
 
-The Compose file provisions only the database. Application and worker
-processes remain explicit local commands so their logs and lifecycle are
-visible during development.
-
-Build the API container locally:
+The Compose topology contains PostgreSQL, API, and worker services. The API
+listens on `http://localhost:8000`. Migrations remain an explicit release
+operation:
 
 ```bash
-docker build -t cloud-native-ai-backend .
-docker run --rm -p 8000:8000 \
-  -e DATABASE_URL=postgresql+psycopg://backend:backend@host.docker.internal:5432/backend \
-  cloud-native-ai-backend
+docker compose run --rm api alembic upgrade head
 ```
 
-The image runs as a non-root user. Database migrations remain an explicit
-release step rather than running implicitly during container startup.
-The image also exposes a Docker health check backed by
-`GET /api/v1/health`. Deployment orchestration should use
-`GET /api/v1/ready` after migrations; readiness performs a database probe and
-returns `503` when the dependency is unavailable.
-
-The current bearer-session verifier is an identity boundary, but session
-issuance is not exposed as a public login flow. Authenticated users can revoke
-their current session. Do not add credentials, customer data, or `.env` files
-to this repository.
-
-For tests and controlled local development, seed a session record and send:
+The readiness endpoint performs a database probe:
 
 ```text
-Authorization: Bearer <session-token>
+GET /api/v1/health
+GET /api/v1/ready
 ```
 
-Job creation also requires a bounded `Idempotency-Key` header. Created jobs are
-durably stored as `queued`; the development worker claims them as `running`,
-executes a deterministic handler, and marks them `completed` or retries them
-through the lease boundary. Provider execution and approval-gated delivery are
-not yet implemented. Worker leases expire and requeue jobs; after three
-attempts, a failed job becomes terminal.
+The worker uses `WORKER_ID` and `WORKER_POLL_INTERVAL_SECONDS` configuration.
+It never logs job payloads or credentials.
 
-Run one development worker pass after applying migrations:
+## Verification
 
 ```bash
-python -m cloud_native_ai_backend.worker
+.venv/bin/pytest
+.venv/bin/ruff check .
+.venv/bin/mypy src tests
+.venv/bin/pip-audit
+python scripts/check_secrets.py
 ```
 
-## Evidence standard
+CI additionally applies PostgreSQL migrations, builds the production image,
+runs Trivy against the image, and performs a container health smoke test.
 
-This project is not portfolio-ready until CI is green, security controls are
-tested, deployment is reproducible, operational behavior is documented, and
-the public repository contains no private or client material.
+## API boundary
+
+The current API includes health and readiness checks, authenticated identity
+inspection, job creation, listing, retrieval, cancellation, session
+revocation, and operational metrics. Authentication issuance remains a
+server-side development boundary and is not exposed as a public login flow.
+
+The following capabilities are intentionally not claimed as complete:
+
+- Production identity and account lifecycle.
+- External broker or queue adapter.
+- Provider or model execution.
+- Approval and delivery workflow.
+- Artifact storage and retention controls.
+- Centralized logs, metrics, and tracing.
+- Cloud infrastructure and public preview deployment.
+
+## Repository map
+
+- `src/cloud_native_ai_backend/` - application and worker code.
+- `alembic/` - migration environment and versioned schema changes.
+- `tests/` - executable API, repository, worker, and database evidence.
+- `docs/architecture.md` - system boundary and responsibilities.
+- `docs/threat-model.md` - assets, trust boundaries, and abuse cases.
+- `docs/api-contract.md` - endpoint and error contract.
+- `docs/test-strategy.md` - test and security gates.
+- `docs/adr/` - recorded architecture decisions.
+- `assets/README-architecture.svg` - repository documentation artwork.
+
+## License
+
+MIT
