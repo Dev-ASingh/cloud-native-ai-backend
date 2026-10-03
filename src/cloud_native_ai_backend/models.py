@@ -38,7 +38,7 @@ class MembershipRecord(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     user_id: Mapped[str] = mapped_column(String(128), index=True)
-    organization_id: Mapped[str | None] = mapped_column(String(128), index=True)
+    organization_id: Mapped[str] = mapped_column(String(128), index=True)
     role: Mapped[str] = mapped_column(String(64))
     active: Mapped[bool] = mapped_column(default=True)
 
@@ -49,7 +49,7 @@ class SessionRecord(Base):
     id: Mapped[str] = mapped_column(String(64), primary_key=True)
     token_hash: Mapped[str] = mapped_column(String(64), unique=True, index=True)
     user_id: Mapped[str] = mapped_column(String(128), index=True)
-    organization_id: Mapped[str] = mapped_column(String(128), index=True)
+    organization_id: Mapped[str | None] = mapped_column(String(128), index=True)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     revoked: Mapped[bool] = mapped_column(default=False)
 
