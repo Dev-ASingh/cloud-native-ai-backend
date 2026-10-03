@@ -162,11 +162,56 @@ def test_worker_claims_and_completes_queued_job() -> None:
         assert replayed is False
         assert created.status.value == "queued"
 
-        claimed = repository.claim_next()
+        claimed = repository.claim_next("worker-1")
         assert claimed is not None
         assert claimed.id == created.id
         assert claimed.status.value == "running"
 
-        completed = repository.complete(created.id)
+        completed = repository.complete(created.id, "worker-1")
         assert completed.status.value == "completed"
-        assert repository.claim_next() is None
+        assert repository.claim_next("worker-1") is None
+
+
+def test_expired_lease_is_requeued_and_retried() -> None:
+    with SessionLocal() as session:
+        repository = SqlAlchemyJobRepository(session)
+        created, _ = repository.create(
+            Principal(user_id="user-1", organization_id="org-1", role="member"),
+            {"kind": "retry-test"},
+            "retry-request",
+        )
+        first = repository.claim_next(
+            "worker-1",
+            lease_duration=timedelta(seconds=1),
+            now=datetime(2026, 1, 1, tzinfo=UTC),
+        )
+        assert first is not None
+        second = repository.claim_next(
+            "worker-2",
+            now=datetime(2026, 1, 1, 0, 0, 2, tzinfo=UTC),
+        )
+        assert second is not None
+        assert second.id == created.id
+        assert second.attempt == 2
+
+
+def test_failed_job_becomes_terminal_after_max_attempts() -> None:
+    with SessionLocal() as session:
+        repository = SqlAlchemyJobRepository(session)
+        created, _ = repository.create(
+            Principal(user_id="user-1", organization_id="org-1", role="member"),
+            {"kind": "failure-test"},
+            "failure-request",
+        )
+        for attempt in range(3):
+            claimed = repository.claim_next(
+                f"worker-{attempt}",
+                lease_duration=timedelta(seconds=1),
+                now=datetime(2026, 1, 1, 0, 0, attempt * 2, tzinfo=UTC),
+            )
+            assert claimed is not None
+            result = repository.fail(created.id, f"worker-{attempt}")
+            if attempt < 2:
+                assert result.status.value == "queued"
+            else:
+                assert result.status.value == "failed"

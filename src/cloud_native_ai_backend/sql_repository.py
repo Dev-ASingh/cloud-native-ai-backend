@@ -1,3 +1,4 @@
+from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
 from sqlalchemy import select
@@ -83,7 +84,15 @@ class SqlAlchemyJobRepository:
         self.session.commit()
         return self._to_domain(record)
 
-    def claim_next(self) -> Job | None:
+    def claim_next(
+        self,
+        worker_id: str,
+        lease_duration: timedelta = timedelta(minutes=1),
+        now: datetime | None = None,
+        max_attempts: int = 3,
+    ) -> Job | None:
+        current_time = now or datetime.now(UTC)
+        self._requeue_expired(current_time, max_attempts)
         record = self.session.scalar(
             select(JobRecord)
             .where(JobRecord.status == JobStatus.QUEUED.value)
@@ -92,19 +101,71 @@ class SqlAlchemyJobRepository:
         )
         if record is None:
             return None
+        record.attempt += 1
+        record.lease_owner = worker_id
+        record.lease_expires_at = current_time + lease_duration
         record.status = JobStatus.RUNNING.value
         self.session.commit()
         return self._to_domain(record)
 
-    def complete(self, job_id: UUID) -> Job:
+    def complete(self, job_id: UUID, worker_id: str) -> Job:
         record = self.session.get(JobRecord, job_id)
         if record is None:
             raise DomainError("job_not_found", "The requested job was not found.")
-        if record.status != JobStatus.RUNNING.value:
+        if (
+            record.status != JobStatus.RUNNING.value
+            or record.lease_owner != worker_id
+        ):
             raise DomainError("invalid_job_transition", "The job cannot be completed.")
         record.status = JobStatus.COMPLETED.value
+        record.lease_owner = None
+        record.lease_expires_at = None
         self.session.commit()
         return self._to_domain(record)
+
+    def fail(
+        self,
+        job_id: UUID,
+        worker_id: str,
+        max_attempts: int = 3,
+    ) -> Job:
+        record = self.session.get(JobRecord, job_id)
+        if record is None:
+            raise DomainError("job_not_found", "The requested job was not found.")
+        if (
+            record.status != JobStatus.RUNNING.value
+            or record.lease_owner != worker_id
+        ):
+            raise DomainError("invalid_job_transition", "The job cannot be failed.")
+        record.status = (
+            JobStatus.FAILED.value
+            if record.attempt >= max_attempts
+            else JobStatus.QUEUED.value
+        )
+        record.lease_owner = None
+        record.lease_expires_at = None
+        self.session.commit()
+        return self._to_domain(record)
+
+    def _requeue_expired(self, now: datetime, max_attempts: int) -> None:
+        expired = self.session.scalars(
+            select(JobRecord).where(
+                JobRecord.status == JobStatus.RUNNING.value,
+                JobRecord.lease_expires_at <= now,
+            )
+        )
+        changed = False
+        for record in expired:
+            record.status = (
+                JobStatus.FAILED.value
+                if record.attempt >= max_attempts
+                else JobStatus.QUEUED.value
+            )
+            record.lease_owner = None
+            record.lease_expires_at = None
+            changed = True
+        if changed:
+            self.session.flush()
 
     def _get_record(self, organization_id: str, job_id: UUID) -> JobRecord:
         record = self.session.scalar(
@@ -125,5 +186,6 @@ class SqlAlchemyJobRepository:
             created_by=record.created_by,
             payload=record.payload,
             status=JobStatus(record.status),
+            attempt=record.attempt,
             created_at=record.created_at,
         )

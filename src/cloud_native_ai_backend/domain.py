@@ -26,6 +26,7 @@ class Job:
     created_by: str
     payload: dict[str, object]
     status: JobStatus = JobStatus.QUEUED
+    attempt: int = 0
     created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
 
 

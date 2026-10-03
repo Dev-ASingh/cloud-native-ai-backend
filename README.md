@@ -82,7 +82,8 @@ Authorization: Bearer <session-token>
 Job creation also requires a bounded `Idempotency-Key` header. Created jobs are
 durably stored as `queued`; a worker claims them as `running` and must mark
 them `completed`. Provider execution, retries, and approval-gated delivery are
-not yet implemented.
+not yet implemented. Worker leases expire and requeue jobs; after three
+attempts, a failed job becomes terminal.
 
 ## Evidence standard
 
