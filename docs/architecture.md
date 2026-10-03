@@ -87,15 +87,17 @@ boundaries.
 
 ## Deployment shape
 
-Local development uses Docker Compose for PostgreSQL, Redis, API, and worker.
-The cloud deployment uses the same application boundaries with managed
-database, queue, object storage, secrets, and observability services. The
-provider mapping will be recorded in an ADR before Terraform is written.
+Local development can use Docker Compose for PostgreSQL, while the API and
+worker remain explicit local processes. The cloud deployment uses the same
+application boundaries with managed database, queue, object storage, secrets,
+and observability services. The provider mapping will be recorded in an ADR
+before Terraform is written.
 
 ## Current implementation boundary
 
-Milestone 3 uses SQLAlchemy persistence with Alembic-managed schema changes and
-a local SQLite default. PostgreSQL is supported through configuration.
+The current implementation uses SQLAlchemy persistence with Alembic-managed
+schema changes, a local SQLite default, and an explicit PostgreSQL driver path
+for deployment and integration environments.
 Opaque bearer sessions identify a request, while active persisted memberships
 determine authorization and role. Session issuance is a server-side service
 operation and authenticated users can revoke their current session. Jobs now
