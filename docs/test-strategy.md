@@ -13,6 +13,10 @@ Run against disposable PostgreSQL and Redis services. Cover migrations,
 transactions, queue-worker execution, artifact persistence, approval flow, and
 dependency failures.
 
+Milestone 2 currently exercises the repository through a local SQLite database
+and separately verifies a fresh Alembic upgrade. PostgreSQL integration tests
+are required before deployment.
+
 ### Contract tests
 
 Validate the generated OpenAPI contract, stable error envelopes, authentication

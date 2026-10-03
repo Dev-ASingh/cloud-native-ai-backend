@@ -2,9 +2,12 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, status
 from pydantic import BaseModel, ConfigDict, Field
+from sqlalchemy.orm import Session
 
 from .config import Settings, get_settings
-from .domain import DomainError, Job, JobRepository, Principal
+from .database import get_session
+from .domain import DomainError, Job, Principal
+from .sql_repository import SqlAlchemyJobRepository
 
 router = APIRouter(prefix="/api/v1")
 
@@ -45,8 +48,8 @@ class PrincipalResponse(BaseModel):
     role: str
 
 
-def get_repository() -> JobRepository:
-    return repository
+def get_repository(session: Session = Depends(get_session)) -> SqlAlchemyJobRepository:
+    return SqlAlchemyJobRepository(session)
 
 
 def get_principal(
@@ -106,7 +109,7 @@ def create_job(
     body: JobCreateRequest,
     idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
     principal: Principal = Depends(get_principal),
-    repo: JobRepository = Depends(get_repository),
+    repo: SqlAlchemyJobRepository = Depends(get_repository),
 ) -> JobResponse:
     if not idempotency_key or len(idempotency_key) > 128:
         raise HTTPException(
@@ -124,7 +127,7 @@ def create_job(
 @router.get("/jobs", response_model=JobListResponse)
 def list_jobs(
     principal: Principal = Depends(get_principal),
-    repo: JobRepository = Depends(get_repository),
+    repo: SqlAlchemyJobRepository = Depends(get_repository),
     limit: int = Query(default=20, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
 ) -> JobListResponse:
@@ -140,7 +143,7 @@ def get_job(
     request: Request,
     job_id: UUID,
     principal: Principal = Depends(get_principal),
-    repo: JobRepository = Depends(get_repository),
+    repo: SqlAlchemyJobRepository = Depends(get_repository),
 ) -> JobResponse:
     try:
         return JobResponse.from_domain(repo.get_for(principal.organization_id, job_id))
@@ -153,12 +156,9 @@ def cancel_job(
     request: Request,
     job_id: UUID,
     principal: Principal = Depends(get_principal),
-    repo: JobRepository = Depends(get_repository),
+    repo: SqlAlchemyJobRepository = Depends(get_repository),
 ) -> JobResponse:
     try:
         return JobResponse.from_domain(repo.cancel(principal.organization_id, job_id))
     except DomainError as error:
         raise handle_domain_error(error, request) from error
-
-
-repository = JobRepository()

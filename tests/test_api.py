@@ -1,7 +1,9 @@
 from fastapi.testclient import TestClient
+from sqlalchemy import delete
 
-from cloud_native_ai_backend.api import repository
+from cloud_native_ai_backend.database import SessionLocal
 from cloud_native_ai_backend.main import app
+from cloud_native_ai_backend.models import IdempotencyRecord, JobRecord
 
 client = TestClient(app)
 AUTH = {
@@ -12,8 +14,10 @@ AUTH = {
 
 
 def setup_function() -> None:
-    repository._jobs.clear()
-    repository._idempotency.clear()
+    with SessionLocal() as session:
+        session.execute(delete(IdempotencyRecord))
+        session.execute(delete(JobRecord))
+        session.commit()
 
 
 def test_health_and_request_id() -> None:

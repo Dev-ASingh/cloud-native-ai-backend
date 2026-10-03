@@ -10,9 +10,15 @@ before adding model variability.
 
 ## Status
 
-Milestone 1 — secure synchronous core. The current implementation uses
-development-only request headers and in-memory persistence. No production or
-customer data is used.
+Milestone 2 — database-backed synchronous core. The current implementation
+uses development-only request headers and a local SQLite default; PostgreSQL is
+supported through `DATABASE_URL`. No production or customer data is used.
+
+Database schema changes are managed with Alembic:
+
+```bash
+alembic upgrade head
+```
 
 ## Design goals
 

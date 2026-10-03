@@ -7,6 +7,7 @@ class Settings(BaseSettings):
     app_name: str = "Cloud-Native AI Backend"
     app_env: str = "development"
     readiness_dependency: bool = True
+    database_url: str = "sqlite:///./cloud_native_ai_backend.db"
 
     model_config = SettingsConfigDict(
         env_file=".env",

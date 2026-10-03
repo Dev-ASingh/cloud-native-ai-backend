@@ -21,6 +21,12 @@ Milestone 1 uses:
 These boundaries must be represented as replaceable interfaces and clearly
 marked as non-production.
 
+## Superseded persistence boundary
+
+Milestone 2 replaces the in-memory job repository with SQLAlchemy persistence
+and an Alembic-managed schema. The development identity headers remain
+temporary.
+
 ## Consequences
 
 - The API and domain behavior can be tested without external services.

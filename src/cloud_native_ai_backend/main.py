@@ -6,8 +6,10 @@ from fastapi.responses import JSONResponse, Response
 
 from .api import router
 from .config import get_settings
+from .database import initialize_database
 
 settings = get_settings()
+initialize_database()
 app = FastAPI(title=settings.app_name, version="0.1.0")
 
 
