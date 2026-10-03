@@ -1,11 +1,14 @@
+from collections.abc import Generator
 from datetime import UTC, datetime, timedelta
 
 from fastapi.testclient import TestClient
 from sqlalchemy import delete
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import Session
 
 from cloud_native_ai_backend.audit import AuditWriter
 from cloud_native_ai_backend.auth import create_session, hash_session_token
-from cloud_native_ai_backend.database import SessionLocal
+from cloud_native_ai_backend.database import SessionLocal, get_session
 from cloud_native_ai_backend.domain import Principal
 from cloud_native_ai_backend.main import app
 from cloud_native_ai_backend.metrics import metrics
@@ -75,6 +78,31 @@ def test_health_and_request_id() -> None:
     assert response.status_code == 200
     assert response.json()["status"] == "ok"
     assert response.headers["X-Request-ID"] == "req_test"
+
+
+def test_readiness_checks_database() -> None:
+    response = client.get("/api/v1/ready")
+
+    assert response.status_code == 200
+    assert response.json()["status"] == "ready"
+
+
+def test_readiness_fails_when_database_is_unavailable() -> None:
+    def broken_session() -> Generator[Session, None, None]:
+        class BrokenSession:
+            def execute(self, _statement: object) -> None:
+                raise SQLAlchemyError("database unavailable")
+
+        yield BrokenSession()  # type: ignore[misc]
+
+    app.dependency_overrides[get_session] = broken_session
+    try:
+        response = client.get("/api/v1/ready")
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 503
+    assert response.json()["detail"] == "Required dependencies are unavailable."
 
 
 def test_metrics_exporter_receives_snapshot() -> None:

@@ -3,7 +3,8 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, status
 from pydantic import BaseModel, ConfigDict, Field
-from sqlalchemy import func, select
+from sqlalchemy import func, select, text
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from .auth import hash_session_token, revoke_session
@@ -136,9 +137,19 @@ def health(settings: Settings = Depends(get_settings)) -> dict[str, str]:
 
 
 @router.get("/ready")
-def ready(settings: Settings = Depends(get_settings)) -> dict[str, str]:
+def ready(
+    settings: Settings = Depends(get_settings),
+    session: Session = Depends(get_session),
+) -> dict[str, str]:
     if not settings.readiness_dependency:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Not ready.")
+    try:
+        session.execute(text("SELECT 1"))
+    except SQLAlchemyError as error:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Required dependencies are unavailable.",
+        ) from error
     return {"status": "ready"}
 
 

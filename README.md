@@ -94,7 +94,9 @@ docker run --rm -p 8000:8000 \
 The image runs as a non-root user. Database migrations remain an explicit
 release step rather than running implicitly during container startup.
 The image also exposes a Docker health check backed by
-`GET /api/v1/health`.
+`GET /api/v1/health`. Deployment orchestration should use
+`GET /api/v1/ready` after migrations; readiness performs a database probe and
+returns `503` when the dependency is unavailable.
 
 The current bearer-session verifier is an identity boundary, but session
 issuance is not exposed as a public login flow. Authenticated users can revoke

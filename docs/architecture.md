@@ -24,7 +24,7 @@ API service
   |      |-- artifact store
   |      |-- audit event writer
   |
-  +-- health, readiness, metrics, and trace context
+  +-- health, database readiness, metrics, and trace context
 ```
 
 ## Component responsibilities

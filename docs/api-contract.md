@@ -38,7 +38,7 @@ server logs and telemetry.
 | `POST` | `/jobs/{job_id}/approve` | Approve a job that reached review. |
 | `GET` | `/jobs/{job_id}/artifacts` | List authorized job artifacts. |
 | `GET` | `/health` | Process liveness. |
-| `GET` | `/ready` | Dependency readiness. |
+| `GET` | `/ready` | Dependency readiness; returns `503` when the database cannot answer a probe query. |
 
 ## Session authentication
 
