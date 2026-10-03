@@ -16,8 +16,14 @@ COPY pyproject.toml README.md ./
 COPY src ./src
 
 RUN python -m pip install --upgrade pip \
-    && python -m pip install --upgrade setuptools msgpack \
     && python -m pip install . \
+    && rm -rf \
+      /usr/local/lib/python3.12/site-packages/pip \
+      /usr/local/lib/python3.12/site-packages/pip-*.dist-info \
+      /usr/local/lib/python3.12/site-packages/setuptools \
+      /usr/local/lib/python3.12/site-packages/setuptools-*.dist-info \
+      /usr/local/lib/python3.12/site-packages/msgpack \
+      /usr/local/lib/python3.12/site-packages/msgpack-*.dist-info \
     && chown -R app:app /app
 
 USER app
