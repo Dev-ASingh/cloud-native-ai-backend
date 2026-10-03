@@ -1,5 +1,7 @@
 from threading import Lock
 
+from .telemetry import MetricExporter
+
 
 class Metrics:
     def __init__(self) -> None:
@@ -19,6 +21,9 @@ class Metrics:
     def reset(self) -> None:
         with self._lock:
             self._counters.clear()
+
+    def export(self, exporter: MetricExporter) -> None:
+        exporter.export(self.snapshot())
 
 
 metrics = Metrics()

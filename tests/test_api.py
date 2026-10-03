@@ -19,6 +19,11 @@ from cloud_native_ai_backend.models import (
     UserRecord,
 )
 from cloud_native_ai_backend.sql_repository import SqlAlchemyJobRepository
+from cloud_native_ai_backend.telemetry import (
+    InMemoryMetricExporter,
+    JsonFormatter,
+    request_id_context,
+)
 from cloud_native_ai_backend.worker import Worker
 
 client = TestClient(app)
@@ -70,6 +75,43 @@ def test_health_and_request_id() -> None:
     assert response.status_code == 200
     assert response.json()["status"] == "ok"
     assert response.headers["X-Request-ID"] == "req_test"
+
+
+def test_metrics_exporter_receives_snapshot() -> None:
+    exporter = InMemoryMetricExporter()
+    metrics.increment("test.counter")
+
+    metrics.export(exporter)
+
+    assert exporter.last_export["test.counter"] == 1
+
+
+def test_json_formatter_includes_request_correlation() -> None:
+    import json
+    import logging
+
+    record = logging.LogRecord(
+        name="test",
+        level=logging.INFO,
+        pathname=__file__,
+        lineno=1,
+        msg="hello",
+        args=(),
+        exc_info=None,
+    )
+    record.method = "GET"
+    record.path = "/api/v1/health"
+    record.duration_ms = 1.2
+    token = request_id_context.set("req_test")
+    try:
+        output = JsonFormatter().format(record)
+    finally:
+        request_id_context.reset(token)
+
+    formatted = json.loads(output)
+    assert formatted["message"] == "hello"
+    assert formatted["request_id"] == "req_test"
+    assert formatted["path"] == "/api/v1/health"
 
 
 def test_jobs_require_authentication() -> None:

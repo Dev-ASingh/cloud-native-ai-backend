@@ -19,6 +19,8 @@ upgrade.
 PostgreSQL integration tests are required before deployment. The metrics
 contract also verifies authentication and organization scoping so one
 organization cannot observe another organization's queue depth.
+Telemetry tests verify request correlation in structured log records and
+snapshot export without including request payloads or credentials.
 
 ### Contract tests
 

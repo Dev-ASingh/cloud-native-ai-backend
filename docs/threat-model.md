@@ -45,6 +45,8 @@
   metadata, never credentials, tokens, or full job payloads.
 - Operational metrics require authentication and scope database-backed job
   gauges to the caller's organization.
+- Structured request logs include correlation identifiers but exclude request
+  bodies, bearer tokens, and other sensitive payloads.
 
 ## Verification
 
