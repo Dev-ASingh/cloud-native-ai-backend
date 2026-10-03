@@ -2,23 +2,22 @@
 
 ## Now
 
-- Latest implementation commit: `6c64afe` (documentation publication slice).
+- Latest implementation commit: pending deployment-boundary release slice.
 - The API and worker have separate Docker Compose service paths.
 - The worker supports configurable identity and long-running polling.
 - CI run `37150560158` passed tests, static checks, security gates, container
   build, Trivy scan, and smoke testing.
-- No hosted preview deployment exists yet.
+- A Render blueprint now defines separate API, worker, and PostgreSQL services;
+  hosted provisioning is still pending Render account access.
 - The repository is public. Hosted deployment and production integrations
   remain intentionally incomplete.
 
 ## Next
 
-1. Choose a container-capable hosting provider and managed PostgreSQL service.
-2. Add production environment configuration, secret handling, and explicit
-   migration execution.
-3. Deploy API and worker as separate services.
-4. Add deployment health/readiness smoke checks and rollback documentation.
-5. Provide the portfolio frontend with a protected, synthetic-data preview
+1. Provision the Render blueprint and review service plans and region.
+2. Run the explicit Alembic release migration and verify health/readiness.
+3. Execute authenticated job lifecycle smoke tests and record rollback data.
+4. Provide the portfolio frontend with a protected, synthetic-data preview
    boundary.
 
 ## Remaining production work

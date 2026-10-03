@@ -13,8 +13,10 @@ from .metrics import metrics
 from .telemetry import configure_logging, request_id_context
 
 settings = get_settings()
+settings.validate_runtime()
 configure_logging()
-initialize_database()
+if settings.auto_create_database:
+    initialize_database()
 app = FastAPI(title=settings.app_name, version="0.1.0")
 logger = logging.getLogger(__name__)
 

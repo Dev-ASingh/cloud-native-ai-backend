@@ -87,6 +87,7 @@ class Worker:
 def main() -> None:
     logging.basicConfig(level=logging.INFO)
     settings = get_settings()
+    settings.validate_runtime()
     with SessionLocal() as session:
         Worker(session, settings.worker_id).run_forever(settings.worker_poll_interval_seconds)
 

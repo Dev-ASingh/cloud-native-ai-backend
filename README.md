@@ -22,10 +22,11 @@ The implemented boundary includes:
 - SQLite for local development and PostgreSQL for integration or deployment.
 - Separate API and worker container paths in Docker Compose.
 - Non-root container execution and CI security gates.
+- Render deployment blueprint for separate API, worker, and PostgreSQL services.
 
 The deterministic executor is intentional. Provider adapters, approval-gated
-delivery, artifact storage, and hosted deployment remain explicit next
-milestones rather than implied capabilities.
+delivery, artifact storage, and hosted runtime verification remain explicit
+next milestones rather than implied capabilities.
 
 ## Architecture
 
@@ -132,6 +133,11 @@ The following capabilities are intentionally not claimed as complete:
 - Artifact storage and retention controls.
 - Centralized logs, metrics, and tracing.
 - Cloud infrastructure and public preview deployment.
+
+Deployment configuration and the release procedure are documented in
+`docs/DEPLOYMENT.md`. The Render blueprint is deployable, but provisioning
+requires access to a Render account and remains subject to the release checks
+listed there.
 
 ## Repository map
 
