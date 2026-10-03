@@ -2,14 +2,14 @@
 
 ## Now
 
-- Latest implementation commit: pending this release slice.
+- Latest implementation commit: `6c64afe` (documentation publication slice).
 - The API and worker have separate Docker Compose service paths.
 - The worker supports configurable identity and long-running polling.
 - CI run `37150560158` passed tests, static checks, security gates, container
   build, Trivy scan, and smoke testing.
 - No hosted preview deployment exists yet.
-- The repository remains private until the public-release security gate is
-  explicitly completed.
+- The repository is public. Hosted deployment and production integrations
+  remain intentionally incomplete.
 
 ## Next
 
