@@ -3,15 +3,17 @@
 Secure, observable, asynchronous backend foundations for trustworthy AI
 workloads.
 
-This repository is Flagship Project 1 in Ashish Singh's Agentic AI and Applied
-AI Systems roadmap. Version one deliberately uses deterministic work so that
-the backend, security, reliability, delivery, and operations can be evaluated
-before adding model variability.
+![System architecture overview](assets/README-architecture.svg)
+
+Version one deliberately uses deterministic work so that the backend, security,
+reliability, delivery, and operations can be evaluated before adding model
+variability.
 
 ## Status
 
-Milestone 3 — database-backed queue boundary. The current implementation
-uses development-only request headers and a local SQLite default; PostgreSQL is
+The current implementation includes a database-backed queue boundary, worker
+leases, audit events, scoped metrics, and structured telemetry. It uses
+development-only request headers and a local SQLite default; PostgreSQL is
 supported through `DATABASE_URL`. No production or customer data is used.
 
 Database schema changes are managed with Alembic:

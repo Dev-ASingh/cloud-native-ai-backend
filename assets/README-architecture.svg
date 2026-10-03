@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 720" role="img" aria-labelledby="title desc">
+  <title id="title">Cloud-native AI backend architecture</title>
+  <desc id="desc">A request flows through an API boundary into durable jobs, workers, and operational evidence.</desc>
+  <rect width="1400" height="720" fill="#101820"/>
+  <path d="M120 360h1160" stroke="#38566b" stroke-width="4" stroke-dasharray="12 14"/>
+  <g fill="#192733" stroke="#8eb8d4" stroke-width="3">
+    <rect x="90" y="250" width="230" height="220" rx="20"/>
+    <rect x="410" y="180" width="260" height="360" rx="20"/>
+    <rect x="760" y="250" width="230" height="220" rx="20"/>
+    <rect x="1080" y="180" width="230" height="360" rx="20"/>
+  </g>
+  <g fill="#d9edf8" font-family="Arial, sans-serif" text-anchor="middle">
+    <text x="205" y="320" font-size="30" font-weight="700">API</text>
+    <text x="205" y="365" font-size="21">auth · errors</text>
+    <text x="540" y="275" font-size="30" font-weight="700">DURABLE JOBS</text>
+    <text x="540" y="325" font-size="21">idempotency</text>
+    <text x="540" y="360" font-size="21">leases · retries</text>
+    <text x="875" y="320" font-size="30" font-weight="700">WORKERS</text>
+    <text x="875" y="365" font-size="21">bounded execution</text>
+    <text x="1195" y="275" font-size="30" font-weight="700">EVIDENCE</text>
+    <text x="1195" y="325" font-size="21">audit · metrics</text>
+    <text x="1195" y="360" font-size="21">telemetry</text>
+  </g>
+  <g fill="#78c6e8">
+    <circle cx="350" cy="360" r="10"/><circle cx="710" cy="360" r="10"/><circle cx="1030" cy="360" r="10"/>
+  </g>
+  <text x="90" y="105" fill="#78c6e8" font-family="monospace" font-size="24" letter-spacing="4">SYSTEM DESIGN / 01</text>
+</svg>

@@ -5,7 +5,6 @@ description = "Secure asynchronous backend foundations for trustworthy AI worklo
 requires-python = ">=3.12"
 readme = "README.md"
 license = { text = "MIT" }
-authors = [{ name = "Ashish Singh", email = "ashish_24r05res17@iitp.ac.in" }]
 dependencies = [
   "fastapi>=0.115,<1",
   "pydantic-settings>=2.7,<3",

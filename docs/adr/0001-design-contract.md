@@ -5,9 +5,8 @@
 
 ## Context
 
-This repository is the first flagship artifact in a long-term Agentic AI and
-Applied AI Systems roadmap. Empty scaffolding would create the appearance of
-progress without proving engineering quality.
+Empty scaffolding would create the appearance of progress without proving
+engineering quality.
 
 ## Decision
 
