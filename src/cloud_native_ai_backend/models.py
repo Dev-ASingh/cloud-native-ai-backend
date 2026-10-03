@@ -14,7 +14,7 @@ class JobRecord(Base):
     organization_id: Mapped[str] = mapped_column(String(128), index=True)
     created_by: Mapped[str] = mapped_column(String(128))
     payload: Mapped[dict[str, object]] = mapped_column(JSON)
-    status: Mapped[str] = mapped_column(String(32), default="accepted")
+    status: Mapped[str] = mapped_column(String(32), default="queued")
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(UTC)
     )

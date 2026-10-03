@@ -5,6 +5,7 @@ from sqlalchemy import delete
 
 from cloud_native_ai_backend.auth import create_session, hash_session_token
 from cloud_native_ai_backend.database import SessionLocal
+from cloud_native_ai_backend.domain import Principal
 from cloud_native_ai_backend.main import app
 from cloud_native_ai_backend.models import (
     IdempotencyRecord,
@@ -14,6 +15,7 @@ from cloud_native_ai_backend.models import (
     SessionRecord,
     UserRecord,
 )
+from cloud_native_ai_backend.sql_repository import SqlAlchemyJobRepository
 
 client = TestClient(app)
 TOKEN_1 = "test-session-user-1"
@@ -147,3 +149,24 @@ def test_job_can_be_cancelled() -> None:
 
     assert response.status_code == 200
     assert response.json()["status"] == "cancelled"
+
+
+def test_worker_claims_and_completes_queued_job() -> None:
+    with SessionLocal() as session:
+        repository = SqlAlchemyJobRepository(session)
+        created, replayed = repository.create(
+            Principal(user_id="user-1", organization_id="org-1", role="member"),
+            {"kind": "worker-test"},
+            "worker-request",
+        )
+        assert replayed is False
+        assert created.status.value == "queued"
+
+        claimed = repository.claim_next()
+        assert claimed is not None
+        assert claimed.id == created.id
+        assert claimed.status.value == "running"
+
+        completed = repository.complete(created.id)
+        assert completed.status.value == "completed"
+        assert repository.claim_next() is None

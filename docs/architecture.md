@@ -70,10 +70,10 @@ code cannot update or delete existing audit records.
 ## State model
 
 ```text
-accepted -> queued -> running -> awaiting_approval -> approved -> delivered
-                  |       |              |              |
-                  v       v              v              v
-               cancelled failed       expired        rejected
+queued -> running -> awaiting_approval -> approved -> delivered
+   |         |              |              |
+   v         v              v              v
+cancelled failed         expired        rejected
 ```
 
 Only the domain service may perform transitions. Invalid transitions are
@@ -94,10 +94,12 @@ provider mapping will be recorded in an ADR before Terraform is written.
 
 ## Current implementation boundary
 
-Milestone 2 uses SQLAlchemy persistence with Alembic-managed schema changes and
+Milestone 3 uses SQLAlchemy persistence with Alembic-managed schema changes and
 a local SQLite default. PostgreSQL is supported through configuration.
 Opaque bearer sessions identify a request, while active persisted memberships
 determine authorization and role. Session issuance is a server-side service
-operation and authenticated users can revoke their current session. Durable
-queueing and a production identity provider are still required before the
-repository can be considered deployable.
+operation and authenticated users can revoke their current session. Jobs now
+enter a durable database-backed queue and expose explicit claim and completion
+transitions. A production queue adapter, retries, provider execution, and
+identity provider are still required before the repository can be considered
+deployable.

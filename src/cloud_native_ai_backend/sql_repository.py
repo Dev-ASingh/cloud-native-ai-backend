@@ -32,7 +32,7 @@ class SqlAlchemyJobRepository:
             organization_id=principal.organization_id,
             created_by=principal.user_id,
             payload=payload,
-            status=JobStatus.ACCEPTED.value,
+            status=JobStatus.QUEUED.value,
         )
         self.session.add(record)
         self.session.flush()
@@ -77,9 +77,32 @@ class SqlAlchemyJobRepository:
         record = self._get_record(organization_id, job_id)
         if record.status == JobStatus.CANCELLED.value:
             return self._to_domain(record)
-        if record.status != JobStatus.ACCEPTED.value:
+        if record.status != JobStatus.QUEUED.value:
             raise DomainError("invalid_job_transition", "The job cannot be cancelled.")
         record.status = JobStatus.CANCELLED.value
+        self.session.commit()
+        return self._to_domain(record)
+
+    def claim_next(self) -> Job | None:
+        record = self.session.scalar(
+            select(JobRecord)
+            .where(JobRecord.status == JobStatus.QUEUED.value)
+            .order_by(JobRecord.created_at.asc())
+            .with_for_update(skip_locked=True)
+        )
+        if record is None:
+            return None
+        record.status = JobStatus.RUNNING.value
+        self.session.commit()
+        return self._to_domain(record)
+
+    def complete(self, job_id: UUID) -> Job:
+        record = self.session.get(JobRecord, job_id)
+        if record is None:
+            raise DomainError("job_not_found", "The requested job was not found.")
+        if record.status != JobStatus.RUNNING.value:
+            raise DomainError("invalid_job_transition", "The job cannot be completed.")
+        record.status = JobStatus.COMPLETED.value
         self.session.commit()
         return self._to_domain(record)
 

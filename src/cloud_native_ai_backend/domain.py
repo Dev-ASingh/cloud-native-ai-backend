@@ -5,7 +5,10 @@ from uuid import UUID, uuid4
 
 
 class JobStatus(StrEnum):
-    ACCEPTED = "accepted"
+    QUEUED = "queued"
+    RUNNING = "running"
+    COMPLETED = "completed"
+    FAILED = "failed"
     CANCELLED = "cancelled"
 
 
@@ -22,7 +25,7 @@ class Job:
     organization_id: str
     created_by: str
     payload: dict[str, object]
-    status: JobStatus = JobStatus.ACCEPTED
+    status: JobStatus = JobStatus.QUEUED
     created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
 
 
@@ -75,7 +78,7 @@ class JobRepository:
         job = self.get_for(organization_id, job_id)
         if job.status == JobStatus.CANCELLED:
             return job
-        if job.status != JobStatus.ACCEPTED:
+        if job.status != JobStatus.QUEUED:
             raise DomainError("invalid_job_transition", "The job cannot be cancelled.")
         job.status = JobStatus.CANCELLED
         return job

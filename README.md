@@ -10,7 +10,7 @@ before adding model variability.
 
 ## Status
 
-Milestone 2 — database-backed synchronous core. The current implementation
+Milestone 3 — database-backed queue boundary. The current implementation
 uses development-only request headers and a local SQLite default; PostgreSQL is
 supported through `DATABASE_URL`. No production or customer data is used.
 
@@ -79,7 +79,10 @@ For tests and controlled local development, seed a session record and send:
 Authorization: Bearer <session-token>
 ```
 
-Job creation also requires a bounded `Idempotency-Key` header.
+Job creation also requires a bounded `Idempotency-Key` header. Created jobs are
+durably stored as `queued`; a worker claims them as `running` and must mark
+them `completed`. Provider execution, retries, and approval-gated delivery are
+not yet implemented.
 
 ## Evidence standard
 
