@@ -29,6 +29,7 @@ server logs and telemetry.
 | Method | Path | Purpose |
 | --- | --- | --- |
 | `POST` | `/auth/session` | Establish a short-lived authenticated session. |
+| `POST` | `/auth/session/revoke` | Revoke the current authenticated session. |
 | `GET` | `/me` | Return the authenticated principal and memberships. |
 | `POST` | `/jobs` | Validate and enqueue a job. |
 | `GET` | `/jobs` | List jobs visible to the caller with pagination. |
@@ -50,8 +51,13 @@ Authorization: Bearer <session-token>
 Only a SHA-256 hash of the token is stored. The session must be active and
 unexpired. The authenticated user is then resolved against an active persisted
 organization membership, and the stored membership role is returned. Token
-issuance and revocation are separate identity-management operations and are not
-implemented as an unauthenticated API shortcut.
+issuance is a server-side service operation until account verification and
+recovery exist. The authenticated revoke endpoint invalidates only the current
+bearer token.
+
+Sessions are bound to one organization. Legacy session records without an
+organization binding are rejected rather than assigned an organization
+implicitly.
 
 ## Request requirements
 

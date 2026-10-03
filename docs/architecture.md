@@ -97,7 +97,7 @@ provider mapping will be recorded in an ADR before Terraform is written.
 Milestone 2 uses SQLAlchemy persistence with Alembic-managed schema changes and
 a local SQLite default. PostgreSQL is supported through configuration.
 Opaque bearer sessions identify a request, while active persisted memberships
-determine authorization and role. Session issuance and revocation are not yet
-implemented as an application flow. Durable queueing and a production identity
-provider are still required before the repository can be considered
-deployable.
+determine authorization and role. Session issuance is a server-side service
+operation and authenticated users can revoke their current session. Durable
+queueing and a production identity provider are still required before the
+repository can be considered deployable.

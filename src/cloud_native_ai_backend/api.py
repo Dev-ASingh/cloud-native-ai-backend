@@ -6,7 +6,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from .auth import hash_session_token
+from .auth import hash_session_token, revoke_session
 from .config import Settings, get_settings
 from .database import get_session
 from .domain import DomainError, Job, Principal
@@ -86,19 +86,35 @@ def get_principal(
     membership = session.scalar(
         select(MembershipRecord).where(
             MembershipRecord.user_id == session_record.user_id,
+            MembershipRecord.organization_id == session_record.organization_id,
             MembershipRecord.active.is_(True),
         )
     )
-    if membership is None:
+    if membership is None or session_record.organization_id is None:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Active organization membership is required.",
         )
     return Principal(
         user_id=session_record.user_id,
-        organization_id=membership.organization_id,
+        organization_id=session_record.organization_id,
         role=membership.role,
     )
+
+
+@router.post("/auth/session/revoke", status_code=status.HTTP_204_NO_CONTENT)
+def revoke_current_session(
+    authorization: str | None = Header(default=None),
+    session: Session = Depends(get_session),
+    _principal: Principal = Depends(get_principal),
+) -> None:
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication is required.",
+        )
+    token = authorization.removeprefix("Bearer ").strip()
+    revoke_session(session, token)
 
 
 def handle_domain_error(error: DomainError, request: Request) -> HTTPException:

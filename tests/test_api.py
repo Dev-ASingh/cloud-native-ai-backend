@@ -3,7 +3,7 @@ from datetime import UTC, datetime, timedelta
 from fastapi.testclient import TestClient
 from sqlalchemy import delete
 
-from cloud_native_ai_backend.auth import hash_session_token
+from cloud_native_ai_backend.auth import create_session, hash_session_token
 from cloud_native_ai_backend.database import SessionLocal
 from cloud_native_ai_backend.main import app
 from cloud_native_ai_backend.models import (
@@ -40,6 +40,7 @@ def setup_function() -> None:
                 id="session-1",
                 token_hash=hash_session_token(TOKEN_1),
                 user_id="user-1",
+                organization_id="org-1",
                 expires_at=datetime.now(UTC) + timedelta(hours=1),
             )
         )
@@ -48,6 +49,7 @@ def setup_function() -> None:
                 id="session-2",
                 token_hash=hash_session_token(TOKEN_2),
                 user_id="user-2",
+                organization_id="org-2",
                 expires_at=datetime.now(UTC) + timedelta(hours=1),
             )
         )
@@ -107,6 +109,7 @@ def test_expired_session_is_rejected() -> None:
                 id="expired",
                 token_hash=hash_session_token("expired-token"),
                 user_id="user-1",
+                organization_id="org-1",
                 expires_at=datetime.now(UTC) - timedelta(minutes=1),
             )
         )
@@ -115,6 +118,22 @@ def test_expired_session_is_rejected() -> None:
     response = client.get("/api/v1/me", headers={"Authorization": "Bearer expired-token"})
 
     assert response.status_code == 401
+
+
+def test_session_can_be_issued_and_revoked() -> None:
+    with SessionLocal() as session:
+        token = create_session(session, "user-1", "org-1", timedelta(hours=1))
+        stored = session.query(SessionRecord).filter_by(user_id="user-1").order_by(
+            SessionRecord.id.desc()
+        ).first()
+        assert stored is not None
+        assert stored.token_hash != token
+        assert len(stored.token_hash) == 64
+
+    authenticated = {"Authorization": f"Bearer {token}"}
+    assert client.get("/api/v1/me", headers=authenticated).status_code == 200
+    assert client.post("/api/v1/auth/session/revoke", headers=authenticated).status_code == 204
+    assert client.get("/api/v1/me", headers=authenticated).status_code == 401
 
 
 def test_job_can_be_cancelled() -> None:

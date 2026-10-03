@@ -69,8 +69,9 @@ uvicorn cloud_native_ai_backend.main:app --reload
 ```
 
 The current bearer-session verifier is an identity boundary, but session
-issuance and revocation are not yet exposed as an application flow. Do not add
-credentials, customer data, or `.env` files to this repository.
+issuance is not exposed as a public login flow. Authenticated users can revoke
+their current session. Do not add credentials, customer data, or `.env` files
+to this repository.
 
 For tests and controlled local development, seed a session record and send:
 
