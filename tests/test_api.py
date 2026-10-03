@@ -16,6 +16,7 @@ from cloud_native_ai_backend.models import (
     UserRecord,
 )
 from cloud_native_ai_backend.sql_repository import SqlAlchemyJobRepository
+from cloud_native_ai_backend.worker import Worker
 
 client = TestClient(app)
 TOKEN_1 = "test-session-user-1"
@@ -215,3 +216,38 @@ def test_failed_job_becomes_terminal_after_max_attempts() -> None:
                 assert result.status.value == "queued"
             else:
                 assert result.status.value == "failed"
+
+
+def test_worker_runs_executor_and_completes_job() -> None:
+    with SessionLocal() as session:
+        repository = SqlAlchemyJobRepository(session)
+        created, _ = repository.create(
+            Principal(user_id="user-1", organization_id="org-1", role="member"),
+            {"kind": "worker-process-test"},
+            "worker-process-request",
+        )
+        executed: list[str] = []
+        worker = Worker(
+            session,
+            "worker-process-1",
+            executor=lambda job: executed.append(str(job.id)),
+        )
+
+        assert worker.run_once() is True
+        assert executed == [str(created.id)]
+        assert repository.get_for("org-1", created.id).status.value == "completed"
+        assert worker.run_once() is False
+
+
+def test_worker_records_executor_failure_for_retry() -> None:
+    with SessionLocal() as session:
+        repository = SqlAlchemyJobRepository(session)
+        created, _ = repository.create(
+            Principal(user_id="user-1", organization_id="org-1", role="member"),
+            {"should_fail": True},
+            "worker-failure-request",
+        )
+        worker = Worker(session, "worker-failure-1")
+
+        assert worker.run_once() is True
+        assert repository.get_for("org-1", created.id).status.value == "queued"

@@ -80,10 +80,17 @@ Authorization: Bearer <session-token>
 ```
 
 Job creation also requires a bounded `Idempotency-Key` header. Created jobs are
-durably stored as `queued`; a worker claims them as `running` and must mark
-them `completed`. Provider execution, retries, and approval-gated delivery are
+durably stored as `queued`; the development worker claims them as `running`,
+executes a deterministic handler, and marks them `completed` or retries them
+through the lease boundary. Provider execution and approval-gated delivery are
 not yet implemented. Worker leases expire and requeue jobs; after three
 attempts, a failed job becomes terminal.
+
+Run one development worker pass after applying migrations:
+
+```bash
+python -m cloud_native_ai_backend.worker
+```
 
 ## Evidence standard
 

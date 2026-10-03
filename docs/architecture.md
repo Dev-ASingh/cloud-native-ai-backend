@@ -100,6 +100,7 @@ Opaque bearer sessions identify a request, while active persisted memberships
 determine authorization and role. Session issuance is a server-side service
 operation and authenticated users can revoke their current session. Jobs now
 enter a durable database-backed queue and expose explicit claim and completion
-transitions. Worker leases, expiry recovery, and bounded retry attempts are
-implemented. A production queue adapter, provider execution, and identity
-provider are still required before the repository can be considered deployable.
+transitions. Worker leases, expiry recovery, bounded retry attempts, and a
+one-shot deterministic worker process are implemented. A production queue
+adapter, provider execution, and identity provider are still required before
+the repository can be considered deployable.
