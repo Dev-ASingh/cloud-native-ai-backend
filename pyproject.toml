@@ -1,0 +1,27 @@
+[project]
+name = "cloud-native-ai-backend"
+version = "0.1.0"
+description = "Secure asynchronous backend foundations for trustworthy AI workloads."
+requires-python = ">=3.12"
+readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "Ashish Singh", email = "ashish_24r05res17@iitp.ac.in" }]
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.3,<9",
+  "ruff>=0.8,<1",
+  "mypy>=1.14,<2",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = ["-ra"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.mypy]
+strict = true
