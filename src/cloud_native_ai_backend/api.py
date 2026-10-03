@@ -1,3 +1,4 @@
+from datetime import UTC, datetime
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, status
@@ -5,10 +6,11 @@ from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from .auth import hash_session_token
 from .config import Settings, get_settings
 from .database import get_session
 from .domain import DomainError, Job, Principal
-from .models import MembershipRecord
+from .models import MembershipRecord, SessionRecord
 from .sql_repository import SqlAlchemyJobRepository
 
 router = APIRouter(prefix="/api/v1")
@@ -56,24 +58,34 @@ def get_repository(session: Session = Depends(get_session)) -> SqlAlchemyJobRepo
 
 def get_principal(
     session: Session = Depends(get_session),
-    x_user_id: str | None = Header(default=None),
-    x_organization_id: str | None = Header(default=None),
-    x_role: str | None = Header(default=None),
+    authorization: str | None = Header(default=None),
 ) -> Principal:
-    if not x_user_id or not x_organization_id:
+    if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Authentication is required.",
         )
-    if len(x_user_id) > 128 or len(x_organization_id) > 128:
+    token = authorization.removeprefix("Bearer ").strip()
+    if not token or len(token) > 512:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication is required.",
+        )
+    session_record = session.scalar(
+        select(SessionRecord).where(
+            SessionRecord.token_hash == hash_session_token(token),
+            SessionRecord.revoked.is_(False),
+            SessionRecord.expires_at > datetime.now(UTC),
+        )
+    )
+    if session_record is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Authentication is required.",
         )
     membership = session.scalar(
         select(MembershipRecord).where(
-            MembershipRecord.user_id == x_user_id,
-            MembershipRecord.organization_id == x_organization_id,
+            MembershipRecord.user_id == session_record.user_id,
             MembershipRecord.active.is_(True),
         )
     )
@@ -83,8 +95,8 @@ def get_principal(
             detail="Active organization membership is required.",
         )
     return Principal(
-        user_id=x_user_id,
-        organization_id=x_organization_id,
+        user_id=session_record.user_id,
+        organization_id=membership.organization_id,
         role=membership.role,
     )
 

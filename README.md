@@ -68,17 +68,14 @@ python -m pip install -e ".[dev]"
 uvicorn cloud_native_ai_backend.main:app --reload
 ```
 
-The current identity headers are an explicit development boundary, not a
-production identity system. Authorization is still resolved through persisted
-active memberships. Do not add credentials, customer data, or `.env` files to
-this repository.
+The current bearer-session verifier is an identity boundary, but session
+issuance and revocation are not yet exposed as an application flow. Do not add
+credentials, customer data, or `.env` files to this repository.
 
-For authenticated development requests, send:
+For tests and controlled local development, seed a session record and send:
 
 ```text
-X-User-ID: user-1
-X-Organization-ID: org-1
-X-Role: member
+Authorization: Bearer <session-token>
 ```
 
 Job creation also requires a bounded `Idempotency-Key` header.

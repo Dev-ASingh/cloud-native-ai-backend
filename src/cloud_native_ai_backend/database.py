@@ -25,6 +25,7 @@ def initialize_database() -> None:
         JobRecord,
         MembershipRecord,
         OrganizationRecord,
+        SessionRecord,
         UserRecord,
     )
 

@@ -39,22 +39,19 @@ server logs and telemetry.
 | `GET` | `/health` | Process liveness. |
 | `GET` | `/ready` | Dependency readiness. |
 
-## Development authentication
+## Session authentication
 
-The development adapter uses explicit headers to exercise authorization
-boundaries before a real identity provider is introduced:
+Authenticated endpoints require an opaque bearer token:
 
 ```text
-X-User-ID
-X-Organization-ID
-X-Role
+Authorization: Bearer <session-token>
 ```
 
-`X-Role` is ignored for authorization. The user and organization values are
-resolved against an active persisted membership, and the stored membership
-role is returned. This mechanism is not production authentication and must be
-replaced before deployment. Missing, oversized, unknown, or unauthorized
-identity values are rejected.
+Only a SHA-256 hash of the token is stored. The session must be active and
+unexpired. The authenticated user is then resolved against an active persisted
+organization membership, and the stored membership role is returned. Token
+issuance and revocation are separate identity-management operations and are not
+implemented as an unauthenticated API shortcut.
 
 ## Request requirements
 

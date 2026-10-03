@@ -43,6 +43,16 @@ class MembershipRecord(Base):
     active: Mapped[bool] = mapped_column(default=True)
 
 
+class SessionRecord(Base):
+    __tablename__ = "sessions"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    token_hash: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    user_id: Mapped[str] = mapped_column(String(128), index=True)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    revoked: Mapped[bool] = mapped_column(default=False)
+
+
 class IdempotencyRecord(Base):
     __tablename__ = "idempotency_keys"
     __table_args__ = (UniqueConstraint("organization_id", "key"),)
