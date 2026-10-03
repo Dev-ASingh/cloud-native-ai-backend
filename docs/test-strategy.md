@@ -13,14 +13,16 @@ Run against disposable PostgreSQL and Redis services. Cover migrations,
 transactions, queue-worker execution, artifact persistence, approval flow, and
 dependency failures.
 
-Milestone 3 currently exercises the repository, one-shot worker, and audit
-writer through a local SQLite database and separately verifies a fresh Alembic
-upgrade.
-PostgreSQL integration tests are required before deployment. The metrics
+The local suite exercises the repository, one-shot worker, and audit writer.
+CI applies a fresh Alembic upgrade against PostgreSQL before running the same
+suite, so migration and runtime behavior are both exercised. The metrics
 contract also verifies authentication and organization scoping so one
 organization cannot observe another organization's queue depth.
 Telemetry tests verify request correlation in structured log records and
 snapshot export without including request payloads or credentials.
+
+The CI database path uses PostgreSQL rather than relying only on SQLite
+`create_all` behavior.
 
 ### Contract tests
 
