@@ -55,3 +55,5 @@ replay, payload limits, log redaction, malformed provider output, dependency
 scanning, tracked-file credential scanning, and container scanning before public
 release. CI currently runs `pip-audit` and the high-signal tracked-file
 credential scan; container scanning remains a deployment gate.
+The CI container gate scans operating-system and Python library packages for
+fixed high and critical vulnerabilities.

@@ -48,3 +48,14 @@ jobs:
           pip-audit
       - name: Scan tracked files for credentials
         run: python scripts/check_secrets.py
+      - name: Build container
+        run: docker build --tag cloud-native-ai-backend:${{ github.sha }} .
+      - name: Scan container
+        uses: aquasecurity/trivy-action@0.33.1
+        with:
+          image-ref: cloud-native-ai-backend:${{ github.sha }}
+          format: table
+          exit-code: "1"
+          ignore-unfixed: true
+          vuln-type: os,library
+          severity: CRITICAL,HIGH

@@ -82,6 +82,18 @@ The Compose file provisions only the database. Application and worker
 processes remain explicit local commands so their logs and lifecycle are
 visible during development.
 
+Build the API container locally:
+
+```bash
+docker build -t cloud-native-ai-backend .
+docker run --rm -p 8000:8000 \
+  -e DATABASE_URL=postgresql+psycopg://backend:backend@host.docker.internal:5432/backend \
+  cloud-native-ai-backend
+```
+
+The image runs as a non-root user. Database migrations remain an explicit
+release step rather than running implicitly during container startup.
+
 The current bearer-session verifier is an identity boundary, but session
 issuance is not exposed as a public login flow. Authenticated users can revoke
 their current session. Do not add credentials, customer data, or `.env` files

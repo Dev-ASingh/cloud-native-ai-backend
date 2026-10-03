@@ -10,6 +10,7 @@ dependencies = [
   "pydantic-settings>=2.7,<3",
   "sqlalchemy>=2.0,<3",
   "psycopg[binary]>=3.2,<4",
+  "uvicorn[standard]>=0.34,<1",
 ]
 
 [project.optional-dependencies]
@@ -18,7 +19,6 @@ dev = [
   "ruff>=0.8,<1",
   "mypy>=1.14,<2",
   "httpx>=0.28,<1",
-  "uvicorn>=0.34,<1",
   "alembic>=1.14,<2",
 ]
 
