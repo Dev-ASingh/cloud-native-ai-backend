@@ -20,6 +20,29 @@ class JobRecord(Base):
     )
 
 
+class UserRecord(Base):
+    __tablename__ = "users"
+
+    id: Mapped[str] = mapped_column(String(128), primary_key=True)
+
+
+class OrganizationRecord(Base):
+    __tablename__ = "organizations"
+
+    id: Mapped[str] = mapped_column(String(128), primary_key=True)
+
+
+class MembershipRecord(Base):
+    __tablename__ = "memberships"
+    __table_args__ = (UniqueConstraint("user_id", "organization_id"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    user_id: Mapped[str] = mapped_column(String(128), index=True)
+    organization_id: Mapped[str] = mapped_column(String(128), index=True)
+    role: Mapped[str] = mapped_column(String(64))
+    active: Mapped[bool] = mapped_column(default=True)
+
+
 class IdempotencyRecord(Base):
     __tablename__ = "idempotency_keys"
     __table_args__ = (UniqueConstraint("organization_id", "key"),)

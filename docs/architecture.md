@@ -96,6 +96,8 @@ provider mapping will be recorded in an ADR before Terraform is written.
 
 Milestone 2 uses SQLAlchemy persistence with Alembic-managed schema changes and
 a local SQLite default. PostgreSQL is supported through configuration.
-Development-only identity headers remain a replaceable adapter, not production
-authentication. Durable queueing and a real identity boundary are still
-required before the repository can be considered deployable.
+Development-only identity headers identify a request, but active persisted
+memberships determine authorization and role. This remains a replaceable
+adapter, not production authentication. Durable queueing and a real identity
+boundary are still required before the repository can be considered
+deployable.

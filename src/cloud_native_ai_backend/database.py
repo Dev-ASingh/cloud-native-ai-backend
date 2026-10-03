@@ -20,6 +20,12 @@ def get_session() -> Generator[Session, None, None]:
 
 
 def initialize_database() -> None:
-    from .models import IdempotencyRecord, JobRecord  # noqa: F401
+    from .models import (  # noqa: F401
+        IdempotencyRecord,
+        JobRecord,
+        MembershipRecord,
+        OrganizationRecord,
+        UserRecord,
+    )
 
     Base.metadata.create_all(bind=engine)

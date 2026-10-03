@@ -68,9 +68,10 @@ python -m pip install -e ".[dev]"
 uvicorn cloud_native_ai_backend.main:app --reload
 ```
 
-The current authentication headers are an explicit development boundary, not a
-production identity system. Do not add credentials, customer data, or `.env`
-files to this repository.
+The current identity headers are an explicit development boundary, not a
+production identity system. Authorization is still resolved through persisted
+active memberships. Do not add credentials, customer data, or `.env` files to
+this repository.
 
 For authenticated development requests, send:
 

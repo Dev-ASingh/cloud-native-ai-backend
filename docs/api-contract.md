@@ -41,8 +41,8 @@ server logs and telemetry.
 
 ## Development authentication
 
-Milestone 1 uses explicit headers to exercise authorization boundaries before a
-real identity provider is introduced:
+The development adapter uses explicit headers to exercise authorization
+boundaries before a real identity provider is introduced:
 
 ```text
 X-User-ID
@@ -50,8 +50,11 @@ X-Organization-ID
 X-Role
 ```
 
-This mechanism is not production authentication and must be replaced before
-deployment. Missing or oversized identity headers are rejected.
+`X-Role` is ignored for authorization. The user and organization values are
+resolved against an active persisted membership, and the stored membership
+role is returned. This mechanism is not production authentication and must be
+replaced before deployment. Missing, oversized, unknown, or unauthorized
+identity values are rejected.
 
 ## Request requirements
 
