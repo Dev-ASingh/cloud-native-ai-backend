@@ -51,7 +51,7 @@ jobs:
       - name: Build container
         run: docker build --tag cloud-native-ai-backend:${{ github.sha }} .
       - name: Scan container
-        uses: aquasecurity/trivy-action@0.33.1
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: cloud-native-ai-backend:${{ github.sha }}
           format: table
