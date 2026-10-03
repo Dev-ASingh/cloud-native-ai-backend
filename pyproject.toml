@@ -6,13 +6,18 @@ requires-python = ">=3.12"
 readme = "README.md"
 license = { text = "MIT" }
 authors = [{ name = "Ashish Singh", email = "ashish_24r05res17@iitp.ac.in" }]
-dependencies = []
+dependencies = [
+  "fastapi>=0.115,<1",
+  "pydantic-settings>=2.7,<3",
+]
 
 [project.optional-dependencies]
 dev = [
   "pytest>=8.3,<9",
   "ruff>=0.8,<1",
   "mypy>=1.14,<2",
+  "httpx>=0.28,<1",
+  "uvicorn>=0.34,<1",
 ]
 
 [tool.pytest.ini_options]
@@ -22,6 +27,7 @@ addopts = ["-ra"]
 [tool.ruff]
 line-length = 100
 target-version = "py312"
+lint.ignore = ["B008"]
 
 [tool.mypy]
 strict = true

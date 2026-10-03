@@ -10,7 +10,9 @@ before adding model variability.
 
 ## Status
 
-Milestone 0 — design contract. No production or customer data is used.
+Milestone 1 — secure synchronous core. The current implementation uses
+development-only request headers and in-memory persistence. No production or
+customer data is used.
 
 ## Design goals
 
@@ -52,8 +54,27 @@ rather than vendor-specific calls.
 
 ## Local development
 
-Implementation setup will be added with Milestone 1. Do not add credentials,
-customer data, or `.env` files to this repository.
+Milestone 1 now exposes a minimal local API. Install development dependencies
+and run:
+
+```bash
+python -m pip install -e ".[dev]"
+uvicorn cloud_native_ai_backend.main:app --reload
+```
+
+The current authentication headers are an explicit development boundary, not a
+production identity system. Do not add credentials, customer data, or `.env`
+files to this repository.
+
+For authenticated development requests, send:
+
+```text
+X-User-ID: user-1
+X-Organization-ID: org-1
+X-Role: member
+```
+
+Job creation also requires a bounded `Idempotency-Key` header.
 
 ## Evidence standard
 

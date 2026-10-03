@@ -39,6 +39,20 @@ server logs and telemetry.
 | `GET` | `/health` | Process liveness. |
 | `GET` | `/ready` | Dependency readiness. |
 
+## Development authentication
+
+Milestone 1 uses explicit headers to exercise authorization boundaries before a
+real identity provider is introduced:
+
+```text
+X-User-ID
+X-Organization-ID
+X-Role
+```
+
+This mechanism is not production authentication and must be replaced before
+deployment. Missing or oversized identity headers are rejected.
+
 ## Request requirements
 
 Each endpoint specification must define:

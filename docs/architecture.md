@@ -91,3 +91,11 @@ Local development uses Docker Compose for PostgreSQL, Redis, API, and worker.
 The cloud deployment uses the same application boundaries with managed
 database, queue, object storage, secrets, and observability services. The
 provider mapping will be recorded in an ADR before Terraform is written.
+
+## Current implementation boundary
+
+Milestone 1 uses an in-memory repository and development-only identity headers
+to validate the domain and HTTP contracts quickly. These are replaceable
+adapters, not production persistence or authentication. PostgreSQL migrations,
+durable queueing, and a real identity boundary are required before the
+repository can be considered deployable.
