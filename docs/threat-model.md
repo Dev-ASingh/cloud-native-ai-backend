@@ -30,7 +30,7 @@
 | Secret leakage in logs | Structured redaction tests and prohibited-field policy. |
 | Unauthorized delivery | Explicit approval state and server-side policy enforcement. |
 | Artifact exposure | Organization-scoped access, signed access path, and retention policy. |
-| Dependency compromise | Locked dependencies, automated scanning, and review gates. |
+| Dependency compromise | Automated dependency scanning and review gates. |
 | Deployment credential abuse | Least-privilege short-lived CI credentials and protected environments. |
 
 ## Security invariants
@@ -52,4 +52,6 @@
 
 Security tests must cover broken object-level authorization, idempotency
 replay, payload limits, log redaction, malformed provider output, dependency
-scanning, and container scanning before public release.
+scanning, tracked-file credential scanning, and container scanning before public
+release. CI currently runs `pip-audit` and the high-signal tracked-file
+credential scan; container scanning remains a deployment gate.
