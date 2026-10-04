@@ -23,10 +23,12 @@ The implemented boundary includes:
 - Separate API and worker container paths in Docker Compose.
 - Non-root container execution and CI security gates.
 - Render deployment blueprint for separate API, worker, and PostgreSQL services.
+- Fail-closed provider adapter registry with a deterministic local adapter.
 
-The deterministic executor is intentional. Provider adapters, approval-gated
-delivery, artifact storage, and hosted runtime verification remain explicit
-next milestones rather than implied capabilities.
+The deterministic adapter is intentional for local verification. External
+provider adapters must be registered explicitly; unknown providers fail
+closed rather than silently falling back. Approval-gated delivery, artifact
+storage, and hosted runtime verification remain explicit next milestones.
 
 ## Architecture
 

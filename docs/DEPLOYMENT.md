@@ -34,3 +34,7 @@ production model provider, approval workflow, artifact store, centralized
 telemetry export, or public login/account lifecycle. Those capabilities must be
 implemented and tested before calling the system a complete production AI
 platform.
+
+Jobs that request an unregistered provider fail closed and become terminal
+failures. This prevents a production deployment from silently executing a
+different provider than the caller selected.
