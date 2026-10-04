@@ -9,6 +9,7 @@ from .config import get_settings
 from .database import SessionLocal
 from .domain import Job
 from .metrics import metrics
+from .providers import ProviderUnavailable, providers
 from .sql_repository import SqlAlchemyJobRepository
 
 logger = logging.getLogger(__name__)
@@ -18,10 +19,8 @@ class JobExecutor(Protocol):
     def __call__(self, job: Job) -> None: ...
 
 
-def execute_deterministic_job(job: Job) -> None:
-    """Development executor used until provider adapters are introduced."""
-    if job.payload.get("should_fail") is True:
-        raise RuntimeError("deterministic job failure requested")
+def execute_job(job: Job) -> None:
+    providers.executor_for(job)(job)
 
 
 class Worker:
@@ -29,7 +28,7 @@ class Worker:
         self,
         session: Session,
         worker_id: str,
-        executor: JobExecutor = execute_deterministic_job,
+        executor: JobExecutor = execute_job,
     ) -> None:
         self.repository = SqlAlchemyJobRepository(session)
         self.audit = AuditWriter(session)
@@ -46,6 +45,19 @@ class Worker:
 
         try:
             self.executor(job)
+        except ProviderUnavailable:
+            logger.exception("Job provider is unavailable", extra={"job_id": str(job.id)})
+            failed = self.repository.fail(job.id, self.worker_id, max_attempts=job.attempt)
+            metrics.increment("worker.jobs_failed")
+            metrics.increment("worker.jobs_terminally_failed")
+            self.audit.append(
+                organization_id=job.organization_id,
+                actor_id=self.worker_id,
+                action="job.execution",
+                target_id=job.id,
+                outcome=failed.status.value,
+                metadata={"attempt": failed.attempt, "reason": "provider_unavailable"},
+            )
         except Exception:
             logger.exception("Job execution failed", extra={"job_id": str(job.id)})
             failed = self.repository.fail(job.id, self.worker_id)
