@@ -1,5 +1,18 @@
 # Deployment
 
+## Recommended: on-demand AWS demonstration
+
+The current deployment path is an on-demand AWS stack described in
+`infra/aws/README.md`. GitHub Actions uses short-lived OIDC credentials to
+create one CloudFormation-owned EC2 stack and to delete it after the demo.
+The stack runs the API, worker, and PostgreSQL together through Docker Compose.
+No AWS access keys are stored in the repository or portfolio.
+
+The portfolio's **Start demo** and **Stop demo** links open authenticated
+GitHub Actions workflows. The workflows require a one-time AWS OIDC role and
+repository configuration, then no AWS credentials or resource IDs are entered
+in the browser.
+
 The repository includes a Render blueprint for the API, worker, and PostgreSQL
 services. The API and worker use the same image and database, but they run as
 separate services so worker polling is not coupled to HTTP availability.

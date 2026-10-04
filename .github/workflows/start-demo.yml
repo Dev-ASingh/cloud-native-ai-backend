@@ -1,0 +1,52 @@
+name: Start demo
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: flagship-01-demo
+  cancel-in-progress: false
+
+jobs:
+  start:
+    runs-on: ubuntu-latest
+    environment: demo-deployment
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure short-lived AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEMO_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_DEMO_REGION }}
+      - name: Deploy temporary stack
+        env:
+          VPC_ID: ${{ vars.AWS_DEMO_VPC_ID }}
+          SUBNET_ID: ${{ vars.AWS_DEMO_SUBNET_ID }}
+          BUDGET_EMAIL: ${{ secrets.AWS_DEMO_BUDGET_EMAIL }}
+        run: |
+          set -euo pipefail
+          aws cloudformation deploy \
+            --stack-name flagship-01-demo \
+            --template-file infra/aws/demo-stack.yaml \
+            --parameter-overrides VpcId="$VPC_ID" SubnetId="$SUBNET_ID" DemoBudgetEmail="$BUDGET_EMAIL" \
+            --tags DemoStack=flagship-01 \
+            --capabilities CAPABILITY_IAM
+      - name: Verify API
+        run: |
+          set -euo pipefail
+          api_url="$(aws cloudformation describe-stacks --stack-name flagship-01-demo \
+            --query 'Stacks[0].Outputs[?OutputKey==`ApiUrl`].OutputValue' --output text)"
+          for attempt in $(seq 1 60); do
+            if curl --fail --silent "$api_url/health"; then
+              echo
+              echo "Demo URL: $api_url"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "Demo health check failed."
+          exit 1

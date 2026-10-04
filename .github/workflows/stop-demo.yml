@@ -1,0 +1,44 @@
+name: Stop demo
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: Type DELETE_FLAGSHIP_01 to confirm complete teardown
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: flagship-01-demo
+  cancel-in-progress: false
+
+jobs:
+  stop:
+    if: inputs.confirm == 'DELETE_FLAGSHIP_01'
+    runs-on: ubuntu-latest
+    environment: demo-deployment
+    steps:
+      - name: Configure short-lived AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEMO_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_DEMO_REGION }}
+      - name: Delete temporary stack
+        run: |
+          set -euo pipefail
+          if aws cloudformation describe-stacks --stack-name flagship-01-demo >/dev/null 2>&1; then
+            aws cloudformation delete-stack --stack-name flagship-01-demo
+            aws cloudformation wait stack-delete-complete --stack-name flagship-01-demo
+          fi
+      - name: Verify stack is absent
+        run: |
+          set -euo pipefail
+          if aws cloudformation describe-stacks --stack-name flagship-01-demo >/dev/null 2>&1; then
+            echo "Stack still exists."
+            exit 1
+          fi
+          echo "Flagship 01 demo stack deleted."

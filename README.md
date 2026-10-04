@@ -24,6 +24,7 @@ The implemented boundary includes:
 - Non-root container execution and CI security gates.
 - Render deployment blueprint for separate API, worker, and PostgreSQL services.
 - Fail-closed provider adapter registry with a deterministic local adapter.
+- On-demand AWS EC2 deployment path with GitHub OIDC and CloudFormation teardown.
 
 The deterministic adapter is intentional for local verification. External
 provider adapters must be registered explicitly; unknown providers fail
@@ -140,6 +141,12 @@ Deployment configuration and the release procedure are documented in
 `docs/DEPLOYMENT.md`. The Render blueprint is deployable, but provisioning
 requires access to a Render account and remains subject to the release checks
 listed there.
+
+The recommended demonstration path is the on-demand AWS stack under
+`infra/aws/`. It creates the API, worker, and PostgreSQL only after an
+authenticated GitHub Actions dispatch and deletes the stack through a separate
+teardown workflow. AWS credentials are never committed or exposed to the
+portfolio.
 
 ## Repository map
 
