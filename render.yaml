@@ -41,7 +41,7 @@ services:
 
   - type: pserv
     name: cloud-native-ai-backend-db
-    runtime: docker
+    runtime: image
     image:
       url: docker.io/library/postgres:16-alpine
     disk:
