@@ -2,23 +2,27 @@
 
 ## Now
 
-- Latest implementation commit: pending deployment-boundary release slice.
+- Latest implementation commit: `ef6a7dd` (guarded on-demand AWS demo slice).
 - The API and worker have separate Docker Compose service paths.
 - The worker supports configurable identity and long-running polling.
 - CI run `37150560158` passed tests, static checks, security gates, container
   build, Trivy scan, and smoke testing.
-- A Render blueprint now defines separate API, worker, and PostgreSQL services;
-  hosted provisioning is still pending Render account access.
+- An on-demand AWS CloudFormation stack now defines the API, worker, and
+  PostgreSQL demo topology.
+- GitHub Actions uses OIDC short-lived credentials; no AWS access keys are
+  stored in the repository or portfolio.
 - The repository is public. Hosted deployment and production integrations
   remain intentionally incomplete.
 
 ## Next
 
-1. Provision the Render blueprint and review service plans and region.
-2. Run the explicit Alembic release migration and verify health/readiness.
-3. Execute authenticated job lifecycle smoke tests and record rollback data.
-4. Provide the portfolio frontend with a protected, synthetic-data preview
-   boundary.
+1. Create the one-time AWS OIDC provider and restricted role from
+   `infra/aws/README.md`.
+2. Add the role ARN, region, VPC, subnet, and budget email to GitHub Actions.
+3. Run Start Demo, verify health/readiness and job lifecycle, then run Stop
+   Demo and verify the CloudFormation stack is absent.
+4. Add the verified temporary API URL only as runtime evidence; never commit it
+   as a permanent preview URL.
 
 ## Remaining production work
 
